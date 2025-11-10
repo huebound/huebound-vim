@@ -32,6 +32,21 @@ vim.schedule(function()
   vim.o.clipboard = 'unnamedplus'
 end)
 
+-- For SSH: use OSC52 to sync clipboard
+if os.getenv('SSH_CONNECTION') then
+  vim.g.clipboard = {
+    name = 'OSC 52',
+    copy = {
+      ['+'] = require('vim.ui.clipboard.osc52').copy('+'),
+      ['*'] = require('vim.ui.clipboard.osc52').copy('*'),
+    },
+    paste = {
+      ['+'] = require('vim.ui.clipboard.osc52').paste('+'),
+      ['*'] = require('vim.ui.clipboard.osc52').paste('*'),
+    },
+  }
+end
+
 -- Enable break indent
 vim.o.breakindent = true
 
