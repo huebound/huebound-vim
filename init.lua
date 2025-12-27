@@ -5,7 +5,7 @@ vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 
 -- Set to true if you have a Nerd Font installed and selected in the terminal
-vim.g.have_nerd_font = false
+vim.g.have_nerd_font = true
 
 -- [[ Setting options ]]
 -- See `:help vim.o`
@@ -101,10 +101,6 @@ vim.o.confirm = true
 -- Clear highlights on search when pressing <Esc> in normal mode
 --  See `:help hlsearch`
 vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
--- From the YT video, might not keep
--- vim.keymap.set('i', 'jj', '<Esc>')
--- You can do remaps WITH functions
--- vim.keymap.set('n', 'jk', function() print 'hello anthony' end)
 
 -- Diagnostic keymaps
 vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
@@ -121,7 +117,7 @@ vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' }
 vim.keymap.set('n', '<left>', '<cmd>echo "Use h to move!!"<CR>')
 vim.keymap.set('n', '<right>', '<cmd>echo "Use l to move!!"<CR>')
 vim.keymap.set('n', '<up>', '<cmd>echo "Use k to move!!"<CR>')
--- vim.keymap.set('n', '<down>', '<cmd>echo "Use j to move!!"<CR>')
+vim.keymap.set('n', '<down>', '<cmd>echo "Use j to move!!"<CR>')
 
 -- Keybinds to make split navigation easier.
 --  Use CTRL+<hjkl> to switch between windows
@@ -132,14 +128,41 @@ vim.keymap.set('n', '<C-l>', '<C-w><C-l>', { desc = 'Move focus to the right win
 vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
 vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
 
--- Lazygit
-vim.keymap.set('n', '<leader>gg', '<cmd>terminal lazygit<CR>', { desc = '[G]it lazygit' })
+-- Lazygit - now handled by toggleterm in custom/plugins/init.lua
 
 -- NOTE: Some terminals have colliding keymaps or are not able to send distinct keycodes
 -- vim.keymap.set("n", "<C-S-h>", "<C-w>H", { desc = "Move window to the left" })
 -- vim.keymap.set("n", "<C-S-l>", "<C-w>L", { desc = "Move window to the right" })
 -- vim.keymap.set("n", "<C-S-j>", "<C-w>J", { desc = "Move window to the lower" })
 -- vim.keymap.set("n", "<C-S-k>", "<C-w>K", { desc = "Move window to the upper" })
+
+-- Centered scrolling (keeps cursor in middle of screen)
+vim.keymap.set('n', '<C-d>', '<C-d>zz', { desc = 'Scroll down and center' })
+vim.keymap.set('n', '<C-u>', '<C-u>zz', { desc = 'Scroll up and center' })
+
+-- Centered searching
+vim.keymap.set('n', 'n', 'nzzzv', { desc = 'Next search result (centered)' })
+vim.keymap.set('n', 'N', 'Nzzzv', { desc = 'Prev search result (centered)' })
+
+-- Move lines up/down in visual mode
+vim.keymap.set('v', 'J', ":m '>+1<CR>gv=gv", { desc = 'Move selection down' })
+vim.keymap.set('v', 'K', ":m '<-2<CR>gv=gv", { desc = 'Move selection up' })
+
+-- Paste without overwriting register (when pasting over selection)
+vim.keymap.set('x', '<leader>p', '"_dP', { desc = 'Paste without overwriting register' })
+
+-- Save file
+vim.keymap.set('n', '<leader>w', '<cmd>w<CR>', { desc = '[W]rite file' })
+
+-- Close buffer
+vim.keymap.set('n', '<leader>bd', '<cmd>bd<CR>', { desc = '[B]uffer [D]elete' })
+
+-- Diagnostic navigation
+vim.keymap.set('n', ']d', vim.diagnostic.goto_next, { desc = 'Next [D]iagnostic' })
+vim.keymap.set('n', '[d', vim.diagnostic.goto_prev, { desc = 'Prev [D]iagnostic' })
+
+-- Undotree toggle
+vim.keymap.set('n', '<leader>u', vim.cmd.UndotreeToggle, { desc = '[U]ndotree toggle' })
 
 -- [[ Basic Autocommands ]]
 --  See `:help lua-guide-autocommands`
@@ -283,6 +306,8 @@ require('lazy').setup({
         { '<leader>s', group = '[S]earch' },
         { '<leader>t', group = '[T]oggle' },
         { '<leader>h', group = 'Git [H]unk', mode = { 'n', 'v' } },
+        { '<leader>g', group = '[G]it' },
+        { '<leader>x', group = 'Trouble' },
       },
     },
   },
@@ -395,6 +420,16 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>sn', function()
         builtin.find_files { cwd = vim.fn.stdpath 'config' }
       end, { desc = '[S]earch [N]eovim files' })
+
+      -- Search including hidden files
+      vim.keymap.set('n', '<leader>sF', function()
+        builtin.find_files { hidden = true, no_ignore = true }
+      end, { desc = '[S]earch [F]iles (including hidden)' })
+
+      -- Git keymaps
+      vim.keymap.set('n', '<leader>gc', builtin.git_commits, { desc = '[G]it [C]ommits' })
+      vim.keymap.set('n', '<leader>gB', builtin.git_branches, { desc = '[G]it [B]ranches' })
+      vim.keymap.set('n', '<leader>gS', builtin.git_status, { desc = '[G]it [S]tatus (telescope)' })
     end,
   },
 
@@ -634,6 +669,12 @@ require('lazy').setup({
             },
           },
         },
+        -- Python
+        pyright = {},
+        -- TypeScript/JavaScript
+        ts_ls = {},
+        -- ESLint
+        eslint = {},
       }
 
       -- Ensure the servers and tools above are installed
@@ -652,6 +693,8 @@ require('lazy').setup({
       local ensure_installed = vim.tbl_keys(servers or {})
       vim.list_extend(ensure_installed, {
         'stylua', -- Used to format Lua code
+        'prettier', -- Used to format JS/TS/HTML/CSS/JSON/Markdown
+        'ruff', -- Used to lint and format Python
       })
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
@@ -704,11 +747,16 @@ require('lazy').setup({
       end,
       formatters_by_ft = {
         lua = { 'stylua' },
-        -- Conform can also run multiple formatters sequentially
-        -- python = { "isort", "black" },
-        --
-        -- You can use 'stop_after_first' to run the first available formatter from the list
-        -- javascript = { "prettierd", "prettier", stop_after_first = true },
+        python = { 'ruff_format' },
+        typescript = { 'prettier' },
+        typescriptreact = { 'prettier' },
+        javascript = { 'prettier' },
+        javascriptreact = { 'prettier' },
+        json = { 'prettier' },
+        html = { 'prettier' },
+        css = { 'prettier' },
+        markdown = { 'prettier' },
+        yaml = { 'prettier' },
       },
     },
   },
@@ -735,12 +783,12 @@ require('lazy').setup({
           -- `friendly-snippets` contains a variety of premade snippets.
           --    See the README about individual language/framework/plugin snippets:
           --    https://github.com/rafamadriz/friendly-snippets
-          -- {
-          --   'rafamadriz/friendly-snippets',
-          --   config = function()
-          --     require('luasnip.loaders.from_vscode').lazy_load()
-          --   end,
-          -- },
+          {
+            'rafamadriz/friendly-snippets',
+            config = function()
+              require('luasnip.loaders.from_vscode').lazy_load()
+            end,
+          },
         },
         opts = {},
       },
@@ -880,7 +928,10 @@ require('lazy').setup({
     main = 'nvim-treesitter.configs', -- Sets main module to use for opts
     -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
     opts = {
-      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' },
+      ensure_installed = {
+        'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc',
+        'python', 'typescript', 'tsx', 'javascript', 'json', 'css', 'yaml',
+      },
       -- Autoinstall languages that are not installed
       auto_install = true,
       highlight = {
@@ -909,18 +960,18 @@ require('lazy').setup({
   --  Here are some example plugins that I've included in the Kickstart repository.
   --  Uncomment any of the lines below to enable them (you will need to restart nvim).
   --
-  -- require 'kickstart.plugins.debug',
-  -- require 'kickstart.plugins.indent_line',
-  -- require 'kickstart.plugins.lint',
-  -- require 'kickstart.plugins.autopairs',
   -- require 'kickstart.plugins.neo-tree',
-  -- require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
+  -- require 'kickstart.plugins.debug',
+  require 'kickstart.plugins.indent_line',
+  -- require 'kickstart.plugins.lint',
+  require 'kickstart.plugins.autopairs',
+  require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
 
   -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
   --    This is the easiest way to modularize your config.
   --
   --  Uncomment the following line and add your plugins to `lua/custom/plugins/*.lua` to get going.
-  -- { import = 'custom.plugins' },
+  { import = 'custom.plugins' },
   --
   -- For additional information with loading, sourcing and examples see `:help lazy.nvim-🔌-plugin-spec`
   -- Or use telescope!
